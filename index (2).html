@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jharkhand Fake Degree Detection System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #005A9E;
+            --secondary-color: #FF6B35;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .navbar {
+            background: var(--primary-color) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .hero-section {
+            background: linear-gradient(rgba(0,90,158,0.9), rgba(0,90,158,0.9));
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .upload-zone {
+            border: 3px dashed #ccc;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary-color);
+            background: #e3f2fd;
+        }
+
+        .result-card {
+            margin-top: 20px;
+            border-left: 5px solid;
+        }
+
+        .result-valid {
+            border-left-color: var(--success-color);
+            background: #d4edda;
+        }
+
+        .result-invalid {
+            border-left-color: var(--danger-color);
+            background: #f8d7da;
+        }
+
+        .result-suspicious {
+            border-left-color: var(--warning-color);
+            background: #fff3cd;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+        }
+
+        .section {
+            display: none;
+            padding: 50px 0;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .verification-details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .anomaly-item {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        .user-info {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-left: 15px;
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 40px 0;
+            margin-top: 50px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .document-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .progress-container {
+            margin: 20px 0;
+        }
+
+        .fraud-indicators {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .security-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="loginSection" class="login-container">
+        <div class="login-card">
+            <div class="text-center mb-4">
+                <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                <h3>Jharkhand Degree Verification</h3>
+                <p class="text-muted">Secure Authentication Required</p>
+            </div>
+            
+            <ul class="nav nav-tabs mb-4" id="authTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button">Login</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button">Register</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="authTabContent">
+                <div class="tab-pane fade show active" id="login" role="tabpanel">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label">Username/Email</label>
+                            <input type="text" class="form-control" id="loginUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" id="loginPassword" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">Remember me</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="register" role="tabpanel">
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="regFullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="regEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" id="regUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" id="regPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">User Type</label>
+                            <select class="form-select" id="userType" required>
+                                <option value="">Select Type</option>
+                                <option value="employer">Employer</option>
+                                <option value="institution">Institution</option>
+                                <option value="government">Government Agency</option>
+                                <option value="admin">System Admin</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Register</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-3">
+                <small class="text-muted">Demo Credentials: admin/admin123</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#" onclick="showSection('home')">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Jharkhand Degree Verification
+                </a>
+                <div class="user-info">
+                    <i class="fas fa-user me-2"></i>
+                    <span id="currentUser">Admin User</span>
+                    <button class="btn btn-sm btn-outline-light ms-2" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Home Section -->
+        <section id="home" class="section active">
+            <div class="hero-section">
+                <div class="container">
+                    <h1 class="display-4 fw-bold mb-4">Advanced Fake Degree Detection</h1>
+                    <p class="lead mb-4">AI-powered document analysis with real-time fraud detection</p>
+                    <button class="btn btn-light btn-lg me-3" onclick="showSection('verify')">
+                        <i class="fas fa-search me-2"></i>Verify Document
+                    </button>
+                    <button class="btn btn-outline-light btn-lg" onclick="showSection('admin')">
+                        <i class="fas fa-cog me-2"></i>Admin Panel
+                    </button>
+                </div>
+            </div>
+
+            <div class="container mt-5">
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                                <h5>AI Document Analysis</h5>
+                                <p>Advanced OCR and machine learning for document authenticity</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                                <h5>Fraud Detection</h5>
+                                <p>Real-time analysis of document anomalies and tampering</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <i class="fas fa-database fa-3x text-success mb-3"></i>
+                                <h5>Institutional Database</h5>
+                                <p>Cross-reference with verified educational records</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Verification Section -->
+        <section id="verify" class="section">
+            <div class="container">
+                <h2 class="text-center mb-5">Document Verification & Fraud Detection</h2>
+                
+                <div class="row">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="card">
+                            <div class="card-body">
+                                <ul class="nav nav-tabs mb-4" id="verifyTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button">
+                                            <i class="fas fa-upload me-2"></i>Upload Document
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="qr-tab" data-bs-toggle="tab" data-bs-target="#qr" type="button">
+                                            <i class="fas fa-qrcode me-2"></i>QR Scanner
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual" type="button">
+                                            <i class="fas fa-keyboard me-2"></i>Manual Entry
+                                        </button>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content" id="verifyTabContent">
+                                    <!-- Upload Tab -->
+                                    <div class="tab-pane fade show active" id="upload" role="tabpanel">
+                                        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                            <h5>Upload Certificate for Analysis</h5>
+                                            <p class="text-muted">Supports PDF, JPG, PNG files up to 10MB</p>
+                                            <p class="text-muted">AI will analyze for authenticity and fraud indicators</p>
+                                            <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;" onchange="handleFileUpload(this.files[0])">
+                                        </div>
+
+                                        <div id="documentPreview" style="display: none;" class="text-center">
+                                            <h6>Document Preview:</h6>
+                                            <img id="previewImage" class="document-preview" alt="Document Preview">
+                                        </div>
+                                    </div>
+
+                                    <!-- QR Scanner Tab -->
+                                    <div class="tab-pane fade" id="qr" role="tabpanel">
+                                        <div class="text-center">
+                                            <div id="qrScanner" style="display: none;">
+                                                <video id="qrVideo" width="100%" height="300" style="border-radius: 10px; background: #000;"></video>
+                                                <canvas id="qrCanvas" style="display: none;"></canvas>
+                                                <div class="mt-3">
+                                                    <button class="btn btn-danger" onclick="stopQRScanner()">
+                                                        <i class="fas fa-stop me-2"></i>Stop Scanner
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="qrStart">
+                                                <i class="fas fa-qrcode fa-4x text-muted mb-3"></i>
+                                                <h5>QR Code Scanner</h5>
+                                                <p class="text-muted">Scan QR codes on certificates for instant verification</p>
+                                                <button class="btn btn-primary" onclick="startQRScanner()">
+                                                    <i class="fas fa-camera me-2"></i>Start Scanner
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Manual Entry Tab -->
+                                    <div class="tab-pane fade" id="manual" role="tabpanel">
+                                        <form id="manualForm">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Certificate Number</label>
+                                                    <input type="text" class="form-control" id="certNumber" required>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Student Name</label>
+                                                    <input type="text" class="form-control" id="studentName" required>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Institution</label>
+                                                    <select class="form-select" id="institution" required>
+                                                        <option value="">Select Institution</option>
+                                                        <option value="RANCHI UNIVERSITY">Ranchi University</option>
+                                                        <option value="BIRLA INSTITUTE OF TECHNOLOGY">BIT Mesra</option>
+                                                        <option value="NIT JAMSHEDPUR">NIT Jamshedpur</option>
+                                                        <option value="JHARKHAND UNIVERSITY">Jharkhand University</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Year of Graduation</label>
+                                                    <select class="form-select" id="gradYear" required>
+                                                        <option value="">Select Year</option>
+                                                        <option value="2023">2023</option>
+                                                        <option value="2022">2022</option>
+                                                        <option value="2021">2021</option>
+                                                        <option value="2020">2020</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-search me-2"></i>Verify Certificate
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <div id="progressContainer" class="progress-container" style="display: none;">
+                                    <h6>Analysis Progress:</h6>
+                                    <div class="progress mb-2">
+                                        <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small id="progressText">Initializing...</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading -->
+                        <div id="loading" class="loading">
+                            <div class="spinner"></div>
+                            <p id="loadingText">Processing document... Please wait</p>
+                        </div>
+
+                        <!-- Results -->
+                        <div id="results" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Section -->
+        <section id="admin" class="section">
+            <div class="container">
+                <h2 class="text-center mb-5">Admin Dashboard</h2>
+                
+                <div class="row">
+                    <div class="col-md-3 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 id="totalVerifications" class="text-primary">0</h3>
+                                <p>Total Verifications</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 id="fraudDetected" class="text-danger">0</h3>
+                                <p>Fraud Detected</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 id="validCertificates" class="text-success">0</h3>
+                                <p>Valid Certificates</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 id="registeredUsers" class="text-info">0</h3>
+                                <p>Registered Users</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-plus me-2"></i>Add Verified Certificate</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="addCertForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Certificate Number</label>
+                                        <input type="text" class="form-control" id="newCertNumber" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Student Name</label>
+                                        <input type="text" class="form-control" id="newStudentName" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Institution</label>
+                                        <select class="form-select" id="newInstitution" required>
+                                            <option value="">Select Institution</option>
+                                            <option value="ranchi-university">Ranchi University</option>
+                                            <option value="bit-mesra">BIT Mesra</option>
+                                            <option value="nit-jamshedpur">NIT Jamshedpur</option>
+                                            <option value="jharkhand-university">Jharkhand University</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Degree</label>
+                                        <input type="text" class="form-control" id="newDegree" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Year</label>
+                                        <input type="number" class="form-control" id="newYear" min="2000" max="2024" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Add Certificate</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-exclamation-triangle me-2"></i>Recent Fraud Alerts</h5>
+                            </div>
+                            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                <div id="fraudAlerts"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        // Authentication System
+        class AuthSystem {
+            constructor() {
+                this.initializeUsers();
+            }
+
+            initializeUsers() {
+                if (!localStorage.getItem('users')) {
+                    const defaultUsers = [
+                        {
+                            username: 'admin',
+                            password: 'admin123',
+                            email: 'admin@jharkhand.gov.in',
+                            fullName: 'System Administrator',
+                            userType: 'admin',
+                            dateCreated: new Date().toISOString()
+                        }
+                    ];
+                    localStorage.setItem('users', JSON.stringify(defaultUsers));
+                }
+            }
+
+            register(userData) {
+                const users = JSON.parse(localStorage.getItem('users')) || [];
+                
+                // Check if user exists
+                if (users.find(u => u.username === userData.username || u.email === userData.email)) {
+                    throw new Error('User already exists');
+                }
+
+                userData.dateCreated = new Date().toISOString();
+                users.push(userData);
+                localStorage.setItem('users', JSON.stringify(users));
+                return true;
+            }
+
+            login(username, password) {
+                const users = JSON.parse(localStorage.getItem('users')) || [];
+                const user = users.find(u => 
+                    (u.username === username || u.email === username) && u.password === password
+                );
+
+                if (user) {
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    return user;
+                }
+                throw new Error('Invalid credentials');
+            }
+
+            logout() {
+                localStorage.removeItem('currentUser');
+            }
+
+            getCurrentUser() {
+                return JSON.parse(localStorage.getItem('currentUser'));
+            }
+
+            isLoggedIn() {
+                return !!this.getCurrentUser();
+            }
+        }
+
+        // Document Analysis System
+        class DocumentAnalyzer {
+            constructor() {
+                this.fraudPatterns = [
+                    'inconsistent fonts',
+                    'misaligned text',
+                    'poor image quality',
+                    'suspicious watermarks',
+                    'altered dates',
+                    'fake signatures',
+                    'wrong institution format'
+                ];
+            }
+
+            async analyzeDocument(file) {
+                const results = {
+                    extractedText: '',
+                    fraudScore: 0,
+                    anomalies: [],
+                    isAuthentic: true,
+                    confidence: 0
+                };
+
+                // Simulate OCR processing
+                await this.simulateOCR(file, results);
+                
+                // Analyze for fraud indicators
+                this.detectFraudPatterns(results);
+                
+                // Calculate final score
+                this.calculateAuthenticityScore(results);
+
+                return results;
+            }
+
+            async simulateOCR(file, results) {
+                // Simulate realistic OCR extraction
+                const sampleTexts = [
+                    'RANCHI UNIVERSITY\nCERTIFICATE OF GRADUATION\nThis is to certify that RAHUL SHARMA\nRoll No: RU2023001\nhas successfully completed Bachelor of Technology\nYear: 2023\nGrade: First Class',
+                    'BIRLA INSTITUTE OF TECHNOLOGY\nDEGREE CERTIFICATE\nStudent: PRIYA SINGH\nRegistration: BIT2022002\nProgram: Master of Computer Applications\nYear of Completion: 2022',
+                    'FAKE UNIVERSITY\nCERTIFICATE\nStudent Name: JOHN DOE\nID: FAKE001\nDegree: Bachelor of Science\nYear: 2023'
+                ];
+
+                // Determine if document is suspicious based on filename
+                const isSuspicious = file.name.toLowerCase().includes('fake') || 
+                                   file.name.toLowerCase().includes('fraud') ||
+                                   Math.random() < 0.3;
+
+                results.extractedText = isSuspicious ? sampleTexts[2] : sampleTexts[Math.floor(Math.random() * 2)];
+                
+                // Extract structured data
+                this.extractStructuredData(results);
+            }
+
+            extractStructuredData(results) {
+                const text = results.extractedText;
+                
+                // Extract student name
+                const nameMatch = text.match(/(?:Student|Name|certify that)\s*:?\s*([A-Z\s]+)/i);
+                results.studentName = nameMatch ? nameMatch[1].trim() : 'Unknown';
+
+                // Extract certificate/roll number
+                const idMatch = text.match(/(?:Roll No|Registration|ID)\s*:?\s*([A-Z0-9]+)/i);
+                results.certificateId = idMatch ? idMatch[1].trim() : 'Unknown';
+
+                // Extract institution
+                const instMatch = text.match(/^([A-Z\s]+(?:UNIVERSITY|INSTITUTE|COLLEGE))/i);
+                results.institution = instMatch ? instMatch[1].trim() : 'Unknown';
+
+                // Extract degree
+                const degreeMatch = text.match(/(?:completed|Program)\s*:?\s*([A-Za-z\s]+)/i);
+                results.degree = degreeMatch ? degreeMatch[1].trim() : 'Unknown';
+
+                // Extract year
+                const yearMatch = text.match(/(?:Year|Completion)\s*:?\s*(\d{4})/i);
+                results.year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+            }
+
+            detectFraudPatterns(results) {
+                const text = results.extractedText.toLowerCase();
+                
+                // Check for suspicious patterns
+                if (text.includes('fake')) {
+                    results.anomalies.push('Document contains "fake" text');
+                    results.fraudScore += 50;
+                }
+
+                if (results.institution.toLowerCase().includes('fake')) {
+                    results.anomalies.push('Suspicious institution name detected');
+                    results.fraudScore += 40;
+                }
+
+                if (results.certificateId === 'Unknown' || results.studentName === 'Unknown') {
+                    results.anomalies.push('Missing critical information');
+                    results.fraudScore += 30;
+                }
+
+                // Random additional anomalies for demonstration
+                if (Math.random() < 0.4) {
+                    const randomAnomaly = this.fraudPatterns[Math.floor(Math.random() * this.fraudPatterns.length)];
+                    results.anomalies.push(`Detected: ${randomAnomaly}`);
+                    results.fraudScore += Math.floor(Math.random() * 25) + 10;
+                }
+            }
+
+            calculateAuthenticityScore(results) {
+                results.fraudScore = Math.min(results.fraudScore, 100);
+                results.confidence = 100 - results.fraudScore;
+                results.isAuthentic = results.fraudScore < 50;
+            }
+        }
+
+        // Certificate Database
+        class CertificateDB {
+            constructor() {
+                this.initializeDB();
+            }
+
+            initializeDB() {
+                if (!localStorage.getItem('certificates')) {
+                    const sampleCerts = [
+                        {
+                            id: 'RU2023001',
+                            studentName: 'RAHUL SHARMA',
+                            institution: 'RANCHI UNIVERSITY',
+                            degree: 'Bachelor of Technology',
+                            year: 2023,
+                            isValid: true,
+                            hash: 'a1b2c3d4e5f6',
+                            dateAdded: new Date().toISOString()
+                        },
+                        {
+                            id: 'BIT2022002',
+                            studentName: 'PRIYA SINGH',
+                            institution: 'BIRLA INSTITUTE OF TECHNOLOGY',
+                            degree: 'Master of Computer Applications',
+                            year: 2022,
+                            isValid: true,
+                            hash: 'f6e5d4c3b2a1',
+                            dateAdded: new Date().toISOString()
+                        }
+                    ];
+                    localStorage.setItem('certificates', JSON.stringify(sampleCerts));
+                }
+
+                if (!localStorage.getItem('verificationStats')) {
+                    const stats = {
+                        totalVerifications: 0,
+                        fraudDetected: 0,
+                        validCertificates: 0,
+                        flaggedDocuments: []
+                    };
+                    localStorage.setItem('verificationStats', JSON.stringify(stats));
+                }
+            }
+
+            verifyCertificate(certId, studentName, institution) {
+                const certificates = JSON.parse(localStorage.getItem('certificates')) || [];
+                return certificates.find(cert => 
+                    cert.id.toLowerCase() === certId.toLowerCase() && 
+                    cert.studentName.toLowerCase().includes(studentName.toLowerCase()) &&
+                    cert.institution.toLowerCase().includes(institution.toLowerCase())
+                );
+            }
+
+            addCertificate(cert) {
+                const certificates = JSON.parse(localStorage.getItem('certificates')) || [];
+                cert.hash = this.generateHash(cert);
+                cert.dateAdded = new Date().toISOString();
+                certificates.push(cert);
+                localStorage.setItem('certificates', JSON.stringify(certificates));
+                return cert;
+            }
+
+            generateHash(cert) {
+                const str = cert.id + cert.studentName + cert.institution + cert.year;
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return Math.abs(hash).toString(16);
+            }
+
+            updateStats(isValid, isFraud) {
+                const stats = JSON.parse(localStorage.getItem('verificationStats'));
+                stats.totalVerifications++;
+                if (isValid) {
+                    stats.validCertificates++;
+                } else if (isFraud) {
+                    stats.fraudDetected++;
+                }
+                localStorage.setItem('verificationStats', JSON.stringify(stats));
+            }
+
+            flagDocument(docData, reason) {
+                const stats = JSON.parse(localStorage.getItem('verificationStats'));
+                const flagged = {
+                    ...docData,
+                    reason,
+                    timestamp: new Date().toISOString(),
+                    reportedBy: auth.getCurrentUser().username
+                };
+                stats.flaggedDocuments.push(flagged);
+                localStorage.setItem('verificationStats', JSON.stringify(stats));
+            }
+
+            getStats() {
+                return JSON.parse(localStorage.getItem('verificationStats'));
+            }
+        }
+
+        // Initialize systems
+        const auth = new AuthSystem();
+        const analyzer = new DocumentAnalyzer();
+        const db = new CertificateDB();
+
+        // Authentication handlers
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const user = auth.login(username, password);
+                document.getElementById('currentUser').textContent = user.fullName;
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                updateDashboard();
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const userData = {
+                fullName: document.getElementById('regFullName').value,
+                email: document.getElementById('regEmail').value,
+                username: document.getElementById('regUsername').value,
+                password: document.getElementById('regPassword').value,
+                userType: document.getElementById('userType').value
+            };
+            
+            try {
+                auth.register(userData);
+                alert('Registration successful! Please login.');
+                document.getElementById('login-tab').click();
+                this.reset();
+            } catch (error) {
+                alert('Registration failed: ' + error.message);
+            }
+        });
+
+        function logout() {
+            auth.logout();
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+        }
+
+        // Document upload and analysis
+        async function handleFileUpload(file) {
+            if (!file) return;
+
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please upload a PDF, JPG, or PNG file.');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB.');
+                return;
+            }
+
+            // Show preview for images
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImage').src = e.target.result;
+                    document.getElementById('documentPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+
+            showProgress();
+            
+            try {
+                // Simulate analysis progress
+                await simulateProgress();
+                
+                // Analyze document
+                const analysisResults = await analyzer.analyzeDocument(file);
+                
+                hideProgress();
+                displayAnalysisResults(analysisResults, file.name);
+                
+            } catch (error) {
+                hideProgress();
+                alert('Analysis failed: ' + error.message);
+            }
+        }
+
+        async function simulateProgress() {
+            const steps = [
+                'Initializing OCR engine...',
+                'Extracting text from document...',
+                'Analyzing document structure...',
+                'Checking fraud patterns...',
+                'Cross-referencing database...',
+                'Calculating authenticity score...'
+            ];
+
+            for (let i = 0; i < steps.length; i++) {
+                document.getElementById('progressText').textContent = steps[i];
+                document.getElementById('progressBar').style.width = ((i + 1) / steps.length * 100) + '%';
+                await new Promise(resolve => setTimeout(resolve, 800));
+            }
+        }
+
+        function showProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+        }
+
+        function hideProgress() {
+            document.getElementById('progressContainer').style.display = 'none';
+        }
+
+        function displayAnalysisResults(analysis, filename) {
+            // Check against database
+            const dbMatch = db.verifyCertificate(analysis.certificateId, analysis.studentName, analysis.institution);
+            
+            let resultClass = 'result-valid';
+            let resultIcon = 'fa-check-circle text-success';
+            let resultTitle = 'Document Verified';
+            let isFraud = false;
+
+            if (analysis.fraudScore > 70) {
+                resultClass = 'result-invalid';
+                resultIcon = 'fa-times-circle text-danger';
+                resultTitle = 'Fraudulent Document Detected';
+                isFraud = true;
+            } else if (analysis.fraudScore > 30 || !dbMatch) {
+                resultClass = 'result-suspicious';
+                resultIcon = 'fa-exclamation-triangle text-warning';
+                resultTitle = 'Suspicious Document - Requires Review';
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="card result-card ${resultClass}">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas ${resultIcon} me-2"></i>
+                            ${resultTitle}
+                        </h5>
+                        
+                        <div class="verification-details">
+                            <h6>Extracted Information:</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Student Name:</strong> ${analysis.studentName}</p>
+                                    <p><strong>Certificate ID:</strong> ${analysis.certificateId}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Institution:</strong> ${analysis.institution}</p>
+                                    <p><strong>Degree:</strong> ${analysis.degree}</p>
+                                    <p><strong>Year:</strong> ${analysis.year}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <p><strong>Fraud Score:</strong> 
+                                        <span class="badge ${analysis.fraudScore > 70 ? 'bg-danger' : analysis.fraudScore > 30 ? 'bg-warning' : 'bg-success'}">
+                                            ${analysis.fraudScore}%
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Confidence:</strong> 
+                                        <span class="badge ${analysis.confidence > 70 ? 'bg-success' : analysis.confidence > 50 ? 'bg-warning' : 'bg-danger'}">
+                                            ${analysis.confidence}%
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${analysis.anomalies.length > 0 ? `
+                            <div class="fraud-indicators">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Detected Anomalies:</h6>
+                                ${analysis.anomalies.map(anomaly => `
+                                    <div class="anomaly-item">
+                                        <i class="fas fa-warning me-2"></i>${anomaly}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${dbMatch ? `
+                            <div class="alert alert-success mt-3">
+                                <h6><i class="fas fa-database me-2"></i>Database Verification</h6>
+                                <p><strong>Status:</strong> Certificate found in verified database</p>
+                                <p><strong>Hash:</strong> ${dbMatch.hash}</p>
+                                <p><strong>Registration Date:</strong> ${new Date(dbMatch.dateAdded).toLocaleDateString()}</p>
+                            </div>
+                        ` : `
+                            <div class="alert alert-warning mt-3">
+                                <h6><i class="fas fa-search me-2"></i>Database Check</h6>
+                                <p>Certificate not found in verified database. This may indicate:</p>
+                                <ul>
+                                    <li>Certificate not yet registered in system</li>
+                                    <li>Potential fraudulent document</li>
+                                    <li>Data entry errors</li>
+                                </ul>
+                            </div>
+                        `}
+
+                        <div class="mt-3">
+                            <button class="btn btn-primary me-2" onclick="downloadReport('${filename}')">
+                                <i class="fas fa-download me-2"></i>Download Report
+                            </button>
+                            ${isFraud ? `
+                                <button class="btn btn-danger me-2" onclick="reportFraud('${filename}')">
+                                    <i class="fas fa-flag me-2"></i>Report Fraud
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-outline-secondary" onclick="clearResults()">
+                                <i class="fas fa-redo me-2"></i>Analyze Another
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+
+            // Update statistics
+            db.updateStats(dbMatch && analysis.fraudScore < 30, isFraud);
+            
+            // Flag suspicious documents
+            if (isFraud || analysis.fraudScore > 50) {
+                db.flagDocument({
+                    filename,
+                    studentName: analysis.studentName,
+                    certificateId: analysis.certificateId,
+                    fraudScore: analysis.fraudScore,
+                    anomalies: analysis.anomalies
+                }, isFraud ? 'Fraudulent document detected' : 'Suspicious document flagged');
+            }
+
+            updateDashboard();
+        }
+
+        // Admin functions
+        document.getElementById('addCertForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newCert = {
+                id: document.getElementById('newCertNumber').value,
+                studentName: document.getElementById('newStudentName').value.toUpperCase(),
+                institution: document.getElementById('newInstitution').options[document.getElementById('newInstitution').selectedIndex].text.toUpperCase(),
+                degree: document.getElementById('newDegree').value,
+                year: parseInt(document.getElementById('newYear').value),
+                isValid: true
+            };
+            
+            db.addCertificate(newCert);
+            
+            alert('Certificate added successfully!');
+            this.reset();
+            updateDashboard();
+        });
+
+        function updateDashboard() {
+            const stats = db.getStats();
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            
+            document.getElementById('totalVerifications').textContent = stats.totalVerifications;
+            document.getElementById('fraudDetected').textContent = stats.fraudDetected;
+            document.getElementById('validCertificates').textContent = stats.validCertificates;
+            document.getElementById('registeredUsers').textContent = users.length;
+
+            // Update fraud alerts
+            const fraudAlerts = document.getElementById('fraudAlerts');
+            if (stats.flaggedDocuments.length === 0) {
+                fraudAlerts.innerHTML = '<p class="text-muted">No fraud alerts</p>';
+            } else {
+                fraudAlerts.innerHTML = stats.flaggedDocuments.slice(-10).reverse().map(flag => `
+                    <div class="alert alert-danger mb-2">
+                        <strong>${flag.filename || flag.certificateId}</strong><br>
+                        <small>${flag.reason} - ${flag.studentName}</small><br>
+                        <small class="text-muted">Reported by ${flag.reportedBy} on ${new Date(flag.timestamp).toLocaleString()}</small>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Utility functions
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionName).classList.add('active');
+            
+            if (sectionName === 'admin') {
+                updateDashboard();
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('documentPreview').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+        }
+
+        function downloadReport(filename) {
+            alert('Report download functionality would be implemented here for: ' + filename);
+        }
+
+        function reportFraud(filename) {
+            alert('Fraud reported for: ' + filename + '\nAuthorities have been notified.');
+        }
+
+        // Drag and drop functionality
+        const uploadZone = document.getElementById('uploadZone');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => uploadZone.classList.add('dragover'), false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('dragover'), false);
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+
+        // QR Scanner Functions
+        let qrStream = null;
+        let qrScanning = false;
+
+        async function startQRScanner() {
+            try {
+                document.getElementById('qrStart').style.display = 'none';
+                document.getElementById('qrScanner').style.display = 'block';
+                
+                const video = document.getElementById('qrVideo');
+                const canvas = document.getElementById('qrCanvas');
+                const context = canvas.getContext('2d');
+                
+                qrStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                video.srcObject = qrStream;
+                video.setAttribute('playsinline', true);
+                video.play();
+                qrScanning = true;
+                
+                video.addEventListener('loadedmetadata', () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    scanQRCode(video, canvas, context);
+                });
+                
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('Unable to access camera. Please ensure camera permissions are granted.');
+                stopQRScanner();
+            }
+        }
+
+        function stopQRScanner() {
+            qrScanning = false;
+            
+            if (qrStream) {
+                qrStream.getTracks().forEach(track => track.stop());
+                qrStream = null;
+            }
+            
+            const video = document.getElementById('qrVideo');
+            video.srcObject = null;
+            
+            document.getElementById('qrStart').style.display = 'block';
+            document.getElementById('qrScanner').style.display = 'none';
+        }
+
+        function scanQRCode(video, canvas, context) {
+            if (!qrScanning) return;
+            
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (code) {
+                    console.log('QR Code detected:', code.data);
+                    processQRData(code.data);
+                    stopQRScanner();
+                    return;
+                }
+            }
+            
+            requestAnimationFrame(() => scanQRCode(video, canvas, context));
+        }
+
+        function processQRData(qrData) {
+            try {
+                // Try to parse as JSON first
+                let certData;
+                if (qrData.startsWith('{')) {
+                    certData = JSON.parse(qrData);
+                } else {
+                    // Parse pipe-separated format: ID|Name|Institution|Year
+                    const parts = qrData.split('|');
+                    if (parts.length >= 4) {
+                        certData = {
+                            certificateId: parts[0],
+                            studentName: parts[1],
+                            institution: parts[2],
+                            year: parts[3]
+                        };
+                    } else {
+                        throw new Error('Invalid QR code format');
+                    }
+                }
+                
+                showProgress();
+                
+                setTimeout(() => {
+                    // Simulate analysis for QR data
+                    const analysisResults = {
+                        extractedText: `Certificate verification via QR code\nStudent: ${certData.studentName}\nID: ${certData.certificateId}\nInstitution: ${certData.institution}\nYear: ${certData.year}`,
+                        studentName: certData.studentName,
+                        certificateId: certData.certificateId,
+                        institution: certData.institution,
+                        year: parseInt(certData.year),
+                        degree: 'Bachelor of Technology', // Default for QR
+                        fraudScore: Math.random() * 30, // QR codes are generally more trusted
+                        anomalies: [],
+                        confidence: 85 + Math.random() * 15
+                    };
+                    
+                    // Add QR-specific validation
+                    if (certData.certificateId.toLowerCase().includes('fake')) {
+                        analysisResults.fraudScore = 90;
+                        analysisResults.anomalies.push('Suspicious certificate ID detected in QR code');
+                    }
+                    
+                    hideProgress();
+                    displayAnalysisResults(analysisResults, 'QR_Code_Scan');
+                }, 1500);
+                
+            } catch (error) {
+                alert('Invalid QR code format. Please scan a valid certificate QR code.');
+                console.error('QR parsing error:', error);
+            }
+        }
+
+        // Generate QR code for certificates (admin function)
+        function generateQRCode(certData) {
+            const qrString = `${certData.id}|${certData.studentName}|${certData.institution}|${certData.year}`;
+            return qrString;
+        }
+
+        // Manual form handler
+        document.getElementById('manualForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const certNumber = document.getElementById('certNumber').value;
+            const studentName = document.getElementById('studentName').value;
+            const institution = document.getElementById('institution').value;
+            const year = document.getElementById('gradYear').value;
+            
+            showProgress();
+            
+            setTimeout(() => {
+                const analysisResults = {
+                    extractedText: `Manual entry verification\nStudent: ${studentName}\nID: ${certNumber}\nInstitution: ${institution}\nYear: ${year}`,
+                    studentName: studentName,
+                    certificateId: certNumber,
+                    institution: institution,
+                    year: parseInt(year),
+                    degree: 'Bachelor of Technology',
+                    fraudScore: Math.random() * 40,
+                    anomalies: [],
+                    confidence: 70 + Math.random() * 20
+                };
+                
+                hideProgress();
+                displayAnalysisResults(analysisResults, 'Manual_Entry');
+            }, 1000);
+        });
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            if (auth.isLoggedIn()) {
+                const user = auth.getCurrentUser();
+                document.getElementById('currentUser').textContent = user.fullName;
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                updateDashboard();
+            }
+        });
+    </script>
+</body>
+</html>
